@@ -181,7 +181,8 @@ def LoadDatasets(args, task_cfg, ids, split='trainval'):
     task_ids = []
     task_batch_size = {}
     task_num_iters = {}
-
+    task_datasets_partial_val = {}
+    task_dataloader_partial_val ={}
     for i, task_id in enumerate(ids):
         task = 'TASK' + task_id
         task_ids.append(task)

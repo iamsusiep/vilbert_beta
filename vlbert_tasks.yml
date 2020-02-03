@@ -28,7 +28,7 @@ TASK1:
   val_annotations_jsonpath: data/VCR/orig/val.jsonl
   max_seq_length: 60
   max_region_num: 100
-  batch_size: 6 
+  batch_size: 12 
   train_split: train
   val_split: val
   lr: 0.000001
@@ -45,7 +45,7 @@ TASK2:
   val_annotations_jsonpath: data/VCR/orig/val.jsonl
   max_seq_length: 80
   max_region_num: 100
-  batch_size: 6
+  batch_size: 12
   train_split: train
   val_split: val
   lr: 0.000001
