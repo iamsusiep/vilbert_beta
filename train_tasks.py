@@ -361,8 +361,8 @@ def main():
                         cooldown=1,
                         threshold=0.001)
     elif args.lr_scheduler == 'mannul':
-        lr_reduce_list = np.array([12, 16])
-        # lr_reduce_list = np.array([6, 8, 10])        
+        #lr_reduce_list = np.array([12, 16])
+        lr_reduce_list = np.array([3, 6, 9, 12, 15, 18])        
         def lr_lambda_fun(epoch):
             return pow(0.1, np.sum(lr_reduce_list <= epoch))
         lr_scheduler = LambdaLR(optimizer, lr_lambda=lr_lambda_fun)
