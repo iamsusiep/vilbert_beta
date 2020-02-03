@@ -231,7 +231,7 @@ def main():
             print(config, file=f)
 
     task_batch_size, task_num_iters, task_ids, task_datasets_train, task_datasets_val, \
-            task_dataloader_train, task_dataloader_val = LoadDatasets(args, task_cfg, args.tasks.split('-'))
+            task_dataloader_train, task_dataloader_val, task_dataloader_partial_val = LoadDatasets(args, task_cfg, args.tasks.split('-'))
 
     tbLogger = utils.tbLogger(timeStamp, savePath, task_names, task_ids, task_num_iters, args.gradient_accumulation_steps)
 
@@ -258,6 +258,10 @@ def main():
         model = VILBertForVLTasks.from_pretrained(
             args.from_pretrained, config, num_labels=num_labels, default_gpu=default_gpu
             )
+ 
+    for name, param in model.named_parameters():
+        if param.requires_grad:
+            print (name, param.data.shape)
 
     task_losses = LoadLosses(args, task_cfg, args.tasks.split('-'))
     model.to(device)
@@ -373,14 +377,18 @@ def main():
     # initialize the data iteration.
     task_iter_train = {name:None for name in task_ids}
     task_count = {name:0 for name in task_ids}
+    previous_weight_text, previous_weight_visual = None, None
     for epochId in tqdm(range(args.num_train_epochs), desc="Epoch"):
         model.train()
+        if previous_weight_text is None and previous_weight_visual is None:
+            previous_weight_text, previous_weight_visual = model.bert.emotion_embedding.emotion_embeddings.weight.clone().detach(), model.bert.v_emotion_embedding.v_emotion_embeddings.weight.clone().detach()
         for step in range(max_num_iter):
             iterId = startIterID + step + (epochId * max_num_iter)
             for task_id in task_ids:
                 if iterId >= task_start_iter[task_id]:
                 # if iterId % task_interval[task_id] == 0:
                     loss, score = ForwardModelsTrain(args, task_cfg, device, task_id, task_count, task_iter_train, task_dataloader_train, model, task_losses, task_start_iter)
+                    
                     loss = loss * loss_scale[task_id]
                     if args.gradient_accumulation_steps > 1:
                         loss = loss / args.gradient_accumulation_steps 
@@ -401,17 +409,44 @@ def main():
         for task_id in task_ids:
             for i, batch in enumerate(task_dataloader_val[task_id]):
                 loss, score, batch_size = ForwardModelsVal(args, task_cfg, device, task_id, batch, model, task_losses)
+                #cur_weight_text =model.bert.emotion_embedding.emotion_embeddings.weight
+                #cur_weight_visual = model.bert.v_emotion_embedding.v_emotion_embeddings.weight
+               
                 tbLogger.step_val(epochId, float(loss), float(score), task_id, batch_size, 'val')
                 if default_gpu:
                     sys.stdout.write('%d/%d\r' % (i, len(task_dataloader_val[task_id])))
                     sys.stdout.flush()
         
         ave_score = tbLogger.showLossVal()
+
+        # Evaluate on Partial Validation
+        for task_id in task_ids:
+            for i, batch in enumerate(task_dataloader_partial_val[task_id]):
+                loss, score, batch_size = ForwardModelsVal(args, task_cfg, device, task_id, batch, model, task_losses)
+                tbLogger.step_partial_val(epochId, float(loss), float(score), task_id, batch_size, 'val')
+                if default_gpu:
+                    sys.stdout.write('%d/%d\r' % (i, len(task_dataloader_partial_val[task_id])))
+                    sys.stdout.flush()
+        
+        partial_ave_score = tbLogger.showLossPartialVal()
+
         if args.lr_scheduler == 'automatic':
             lr_scheduler.step(ave_score)
             logger.info("best average score is %3f" %lr_scheduler.best)
         else:
             lr_scheduler.step()
+
+        cur_weight_text, cur_weight_visual =model.bert.emotion_embedding.emotion_embeddings.weight.clone().detach(), model.bert.v_emotion_embedding.v_emotion_embeddings.weight.clone().detach()
+        print('text prev',previous_weight_text)
+        print('text cur',cur_weight_text)
+        print('visual prev',previous_weight_visual)
+        print('visual cur', cur_weight_visual) 
+        change_text = torch.norm(previous_weight_text - cur_weight_text).item()/torch.norm(previous_weight_text).item()
+        change_visual = torch.norm(previous_weight_visual -cur_weight_visual).item()/torch.norm(previous_weight_visual).item()
+        print("Suji, Change in Emotion Weight Text:", change_text)
+        print("Suji, Change in Emotion Weight Visual:", change_visual)
+        previous_weight_text = cur_weight_text 
+        previous_weight_visual = cur_weight_visual
 
         if default_gpu:
             # Save a trained model

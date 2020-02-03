@@ -1252,7 +1252,27 @@ class BertPreTrainedModel(nn.Module):
                 )
             )
         return model
+class EmotionEmbeddings(nn.Module): #TODO suji
+    """
+    Construct emotion embedding
+    """
+    def __init__(self, config):
+        super(EmotionEmbeddings, self).__init__()
+        self.emotion_embeddings = nn.Linear(7, config.hidden_size) # 7 x 768
 
+    def forward(self, emotion_ids):
+        return self.emotion_embeddings(emotion_ids) # n (input_ids x v_feature_size, input_locx5), 768
+
+class EmotionImageEmbeddings(nn.Module):
+    """
+    Construct image emotion embedding
+    """
+    def __init__(self, config):
+        super(EmotionImageEmbeddings, self).__init__()
+        self.v_emotion_embeddings = nn.Linear(7, config.v_hidden_size) # 7 x 2048
+
+    def forward(self, emotion_ids):
+        return self.v_emotion_embeddings(emotion_ids)
 
 class BertModel(BertPreTrainedModel):
     """BERT model ("Bidirectional Embedding Representations from a Transformer").
@@ -1311,7 +1331,8 @@ class BertModel(BertPreTrainedModel):
         self.encoder = BertEncoder(config)
         self.t_pooler = BertTextPooler(config)
         self.v_pooler = BertImagePooler(config)
-
+        self.emotion_embedding = EmotionEmbeddings(config)
+        self.v_emotion_embedding = EmotionImageEmbeddings(config)
         self.apply(self.init_bert_weights)
 
     def forward(
@@ -1323,8 +1344,10 @@ class BertModel(BertPreTrainedModel):
         attention_mask=None,
         image_attention_mask=None,
         co_attention_mask=None,
+        emotion_t = None,
+        emotion_v = None,
         output_all_encoded_layers=False,
-        output_all_attention_masks=False,
+        output_all_attention_masks=False
     ):
         if attention_mask is None:
             attention_mask = torch.ones_like(input_txt)
@@ -1368,10 +1391,8 @@ class BertModel(BertPreTrainedModel):
         extended_co_attention_mask = extended_co_attention_mask.to(
             dtype=next(self.parameters()).dtype
         )  # fp16 compatibility
-
-        embedding_output = self.embeddings(input_txt, token_type_ids)
-        v_embedding_output = self.v_embeddings(input_imgs, image_loc)
-
+        embedding_output = self.embeddings(input_txt, token_type_ids) + self.emotion_embedding(emotion_t)
+        v_embedding_output = self.v_embeddings(input_imgs, image_loc) + self.v_emotion_embedding(emotion_v)
         encoded_layers_t, encoded_layers_v, all_attention_mask = self.encoder(
             embedding_output,
             v_embedding_output,
@@ -1526,7 +1547,9 @@ class VILBertForVLTasks(BertPreTrainedModel):
         attention_mask=None,
         image_attention_mask=None,
         co_attention_mask=None,
-        output_all_encoded_layers=False,
+        emotion_t = None,
+        emotion_v = None,
+        output_all_encoded_layers=False
     ):
         sequence_output_t, sequence_output_v, pooled_output_t, pooled_output_v, _ = self.bert(
             input_txt,
@@ -1536,7 +1559,10 @@ class VILBertForVLTasks(BertPreTrainedModel):
             attention_mask,
             image_attention_mask,
             co_attention_mask,
-            output_all_encoded_layers=False,
+            emotion_t,
+            emotion_v,
+            False,
+            False
         )
 
         vil_prediction = 0
