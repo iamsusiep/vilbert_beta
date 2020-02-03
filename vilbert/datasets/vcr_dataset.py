@@ -96,8 +96,7 @@ class VCRDataset(Dataset):
         tokenizer: BertTokenizer,
         padding_index: int = 0,
         max_seq_length: int = 40,
-        max_region_num: int = 60, 
-        val_indicator = ""
+        max_region_num: int = 60
     ):
         # All the keys in `self._entries` would be present in `self._image_features_reader`
         if task == 'VCR_Q-A':
@@ -127,29 +126,14 @@ class VCRDataset(Dataset):
             os.makedirs(os.path.join(dataroot, "cache"))
 
         # cache file path data/cache/train_ques
-        cache_path = "data/VCR/reg1/" + split + val_indicator + '_' + task + "_" + str(max_seq_length) + "_" + str(max_region_num) + "_vcr.pkl"
-        # cache file path data/cache/train_ques
+        cache_path = "data/VCR/cache/pretrained_original/" + split + '_' + task + "_" + str(max_seq_length) + "_" + str(max_region_num) + "_vcr.pkl"
         if not os.path.exists(cache_path):
-            #os.makedirs(os.path.dirname(cache_path))
-            self.tokenize()
-            self.tensorize()
-            cf = open(cache_path, 'wb')
-            cPickle.dump(self._entries,cf)
-            cf.close() 
-        else:
-            print("cache read")
-            cf = open(cache_path, "rb")
-            self._entries = cPickle.load(cf)
-            cf.close()
-        print("init complete")
-        '''cache_path = "data/VCR/cache/pretrained_original/" + split + '_' + task + "_" + str(max_seq_length) + "_" + str(max_region_num) + "_vcr.pkl"
-        if not os.path.exists(cache_path):
+            os.makedirs(cache_path)
             self.tokenize()
             self.tensorize()
             cPickle.dump(self._entries, open(cache_path, 'wb'))
         else:
             self._entries = cPickle.load(open(cache_path, "rb"))
-        '''
     def tokenize(self):
         """Tokenizes the captions.
 
