@@ -1,0 +1,9 @@
+VCR_Q-A-VCR_QA-R_bert_base_6layer_6conect-pretrained/
+data/VCR/
+pretrained_model/
+save/
+tools/__pycache__/
+tools/refer/__pycache__/
+vilbert/__pycache__/
+vilbert/datasets/__pycache__/
+

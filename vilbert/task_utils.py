@@ -26,7 +26,7 @@ def ForwardModelsVal(args, task_cfg, device, task_id, batch, model, task_losses)
     features, spatials, image_mask, question, target, input_mask, segment_ids, co_attention_mask, question_id = batch
     batch_size = features.size(0)
 
-    if task_id in ['TASK2', 'TASK3', 'TASK5', 'TASK6', 'TASK7']:
+    if task_id in ['TASK1', 'TASK2', 'TASK3', 'TASK5', 'TASK6', 'TASK7']:
         max_num_bbox = features.size(1)
         num_options = question.size(1)
         features = features.unsqueeze(1).expand(batch_size, num_options, max_num_bbox, 2048).contiguous().view(-1, max_num_bbox, 2048)
@@ -86,7 +86,7 @@ def ForwardModelsTrain(args, task_cfg, device, task_id, task_count, task_iter_tr
     features, spatials, image_mask, question, target, input_mask, segment_ids, co_attention_mask, question_id = batch
     batch_size = features.size(0)
 
-    if task_id in ['TASK2', 'TASK3', 'TASK5', 'TASK6', 'TASK7']:
+    if task_id in ['TASK1', 'TASK2', 'TASK3', 'TASK5', 'TASK6', 'TASK7']:
         max_num_bbox = features.size(1)
         num_options = question.size(1)
         features = features.unsqueeze(1).expand(batch_size, num_options, max_num_bbox, 2048).contiguous().view(-1, max_num_bbox, 2048)
@@ -210,6 +210,7 @@ def LoadDatasets(args, task_cfg, ids, split='trainval'):
                                 )
 
         task_datasets_val[task] = None
+        task_datasets_partial_val[task] = None
         if 'val' in split:
             task_datasets_val[task] = DatasetMapTrain[task](
                                 task=task_cfg[task]['name'],
@@ -222,7 +223,20 @@ def LoadDatasets(args, task_cfg, ids, split='trainval'):
                                 padding_index=0,
                                 max_seq_length=task_cfg[task]['max_seq_length'],
                                 max_region_num=task_cfg[task]['max_region_num'])
-
+            # Partial Validation
+            task_datasets_partial_val[task] = DatasetMapTrain[task](
+                                task=task_cfg[task]['name'],
+                                dataroot=task_cfg[task]['dataroot'],
+                                annotations_jsonpath="data/VCR/val.jsonl",
+                                split=task_cfg[task]['val_split'],
+                                image_features_reader= task_feature_reader1[task_cfg[task]['features_h5path1']], 
+                                gt_image_features_reader= task_feature_reader2[task_cfg[task]['features_h5path2']],
+                                tokenizer=tokenizer, 
+                                padding_index=0,
+                                max_seq_length=task_cfg[task]['max_seq_length'],
+                                max_region_num=task_cfg[task]['max_region_num'],
+                                val_indicator = "partial"
+                                )
         task_num_iters[task] = 0
         task_batch_size[task] = 0
         if 'train' in split:
@@ -253,8 +267,15 @@ def LoadDatasets(args, task_cfg, ids, split='trainval'):
                 num_workers=num_workers,
                 pin_memory=True,
             )
-
-    return task_batch_size, task_num_iters, task_ids, task_datasets_train, task_datasets_val, task_dataloader_train, task_dataloader_val
+            # Partial Validation
+            task_dataloader_partial_val[task] = DataLoader(
+                task_datasets_partial_val[task],
+                shuffle=False,
+                batch_size=batch_size,
+                num_workers=num_workers,
+                pin_memory=True,
+            )
+    return task_batch_size, task_num_iters, task_ids, task_datasets_train, task_datasets_val, task_dataloader_train, task_dataloader_val, task_dataloader_partial_val
 
 
 def LoadDatasetEval(args, task_cfg, ids):

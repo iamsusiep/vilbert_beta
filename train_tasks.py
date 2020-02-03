@@ -231,7 +231,7 @@ def main():
             print(config, file=f)
 
     task_batch_size, task_num_iters, task_ids, task_datasets_train, task_datasets_val, \
-            task_dataloader_train, task_dataloader_val = LoadDatasets(args, task_cfg, args.tasks.split('-'))
+            task_dataloader_train, task_dataloader_val, task_dataloader_partial_val = LoadDatasets(args, task_cfg, args.tasks.split('-'))
 
     tbLogger = utils.tbLogger(timeStamp, savePath, task_names, task_ids, task_num_iters, args.gradient_accumulation_steps)
 
@@ -407,6 +407,18 @@ def main():
                     sys.stdout.flush()
         
         ave_score = tbLogger.showLossVal()
+
+        # Evaluate on Partial Validation
+        for task_id in task_ids:
+            for i, batch in enumerate(task_dataloader_partial_val[task_id]):
+                loss, score, batch_size = ForwardModelsVal(args, task_cfg, device, task_id, batch, model, task_losses)
+                tbLogger.step_partial_val(epochId, float(loss), float(score), task_id, batch_size, 'val')
+                if default_gpu:
+                    sys.stdout.write('%d/%d\r' % (i, len(task_dataloader_partial_val[task_id])))
+                    sys.stdout.flush()
+        
+        partial_ave_score = tbLogger.showLossPartialVal()
+
         if args.lr_scheduler == 'automatic':
             lr_scheduler.step(ave_score)
             logger.info("best average score is %3f" %lr_scheduler.best)

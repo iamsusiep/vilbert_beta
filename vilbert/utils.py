@@ -42,6 +42,9 @@ def lr_warmup(step, ):
 
 class tbLogger(object):
     def __init__(self, log_dir, txt_dir, task_names, task_ids, task_num_iters, gradient_accumulation_steps, save_logger=True, txt_name='out.txt'):
+        log_dir = os.path.join(log_dir, 'reg1')
+        if not os.path.exists(log_dir):
+            os.makedirs(log_dir)
         logger.info("logging file at: " + log_dir)
 
         self.save_logger=save_logger
@@ -64,6 +67,11 @@ class tbLogger(object):
         self.task_score_val = {task_id:0 for task_id in task_ids}
         self.task_step_val = {task_id:0 for task_id in task_ids}
         self.task_datasize_val = {task_id:0 for task_id in task_ids}
+        # Partial Validation
+        self.task_loss_partial_val = {task_id:0 for task_id in task_ids}
+        self.task_score_partial_val = {task_id:0 for task_id in task_ids}
+        self.task_step_partial_val = {task_id:0 for task_id in task_ids}
+        self.task_datasize_partial_val = {task_id:0 for task_id in task_ids}
 
     def txt_close(self):
         self.txt_f.close()
@@ -84,6 +92,7 @@ class tbLogger(object):
         # plot on tensorboard.
         self.linePlot(stepId, loss, split, self.task_id2name[task_id] + '_loss')
         self.linePlot(stepId, score, split, self.task_id2name[task_id] + '_score')
+        self.linePlot(stepId, norm, split, self.task_id2name[task_id] + '_learning_rate')
 
     def step_val(self, epochId, loss, score, task_id, batch_size, split):
         self.task_loss_val[task_id] += loss
@@ -101,10 +110,13 @@ class tbLogger(object):
             score = self.task_score_val[task_id] / float(self.task_datasize_val[task_id])
             ave_score += score
             ave_loss += loss
-            lossInfo += '[%s]: loss %.3f score %.3f ' %(self.task_id2name[task_id], loss, score * 100.0)
+            #lossInfo += '[%s]: loss %.3f score %.3f ' %(self.task_id2name[task_id], loss, score * 100.0)
+            lossInfo += '[%s]: loss %.3f score %.3f ' %(self.task_id2name[task_id]+ "full", loss, score * 100.0)
+            self.linePlot(self.epochId, loss, 'val', self.task_id2name[task_id] + '_full_loss')
+            self.linePlot(self.epochId, score, 'val', self.task_id2name[task_id] + '_full_score')
 
-            self.linePlot(self.epochId, loss, 'val', self.task_id2name[task_id] + '_loss')
-            self.linePlot(self.epochId, score, 'val', self.task_id2name[task_id] + '_score')
+            #self.linePlot(self.epochId, loss, 'val', self.task_id2name[task_id] + '_loss')
+            #self.linePlot(self.epochId, score, 'val', self.task_id2name[task_id] + '_score')
 
         ave_score = ave_score / len(self.task_ids)
         self.task_loss_val = {task_id:0 for task_id in self.task_loss_val}
@@ -114,7 +126,36 @@ class tbLogger(object):
         logger.info(lossInfo)
         print(lossInfo, file=self.txt_f)
         return ave_score
+    # Partial Validation
+    def step_partial_val(self, epochId, loss, score, task_id, batch_size, split):
+        self.task_loss_partial_val[task_id] += loss
+        self.task_score_partial_val[task_id] += score
+        self.task_step_partial_val[task_id] += self.gradient_accumulation_steps
+        self.task_datasize_partial_val[task_id] += batch_size
 
+    def showLossPartialVal(self):
+        progressInfo = "Eval Ep: %d " %self.epochId
+        lossInfo = 'Validation (Partial) '
+        ave_score = 0
+        ave_loss = 0
+        for task_id in self.task_ids:
+            loss = self.task_loss_partial_val[task_id] / float(self.task_step_partial_val[task_id])
+            score = self.task_score_partial_val[task_id] / float(self.task_datasize_partial_val[task_id])
+            ave_score += score
+            ave_loss += loss
+            lossInfo += '[%s]: loss %.3f score %.3f ' %(self.task_id2name[task_id] + "partial", loss, score * 100.0)
+
+            self.linePlot(self.epochId, loss, 'val', self.task_id2name[task_id] + '_partial_loss')
+            self.linePlot(self.epochId, score, 'val', self.task_id2name[task_id] + '_partial_score')
+
+        ave_score = ave_score / len(self.task_ids)
+        self.task_loss_partial_val = {task_id:0 for task_id in self.task_loss_partial_val}
+        self.task_score_partial_val = {task_id:0 for task_id in self.task_score_partial_val}
+        self.task_datasize_partial_val = {task_id:0 for task_id in self.task_datasize_partial_val}
+        self.task_step_partial_val = {task_id:0 for task_id in self.task_ids}
+        logger.info(lossInfo)
+        print(lossInfo, file=self.txt_f)
+        return ave_score
     def showLossTrain(self):
         # show the current loss, once showed, reset the loss. 
         lossInfo = ''
