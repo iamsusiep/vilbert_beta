@@ -85,3 +85,37 @@ TASK4:
   val_split: val
   lr: 0.00004
   num_epoch: 20
+TASK5:
+  name: VCR_Q-R
+  type: VL-logit
+  loss: CrossEntropyLoss
+  task_id: 13
+  dataroot: data/VCR
+  features_h5path1: data/VCR/VCR_resnet101_faster_rcnn_genome.lmdb
+  features_h5path2: data/VCR/VCR_gt_resnet101_faster_rcnn_genome.lmdb
+  train_annotations_jsonpath: data/VCR/orig/train.jsonl
+  val_annotations_jsonpath: data/VCR/orig/val.jsonl
+  max_seq_length: 60
+  max_region_num: 100
+  batch_size: 16
+  train_split: train
+  val_split: val
+  lr: 0.000001
+  num_epoch: 20
+TASK6:
+  name: VCR_QR-A
+  type: VL-logit
+  loss: CrossEntropyLoss
+  task_id: 15
+  dataroot: data/VCR
+  features_h5path1: data/VCR/VCR_resnet101_faster_rcnn_genome.lmdb
+  features_h5path2: data/VCR/VCR_gt_resnet101_faster_rcnn_genome.lmdb
+  train_annotations_jsonpath: data/VCR/orig/train.jsonl
+  val_annotations_jsonpath: data/VCR/orig/val.jsonl
+  max_seq_length: 80
+  max_region_num: 100
+  batch_size: 16
+  train_split: train
+  val_split: val
+  lr: 0.000001
+  num_epoch: 20

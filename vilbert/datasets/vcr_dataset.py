@@ -84,6 +84,56 @@ def _load_annotationsQA_R(annotations_jsonpath, split):
 
     return entries
 
+def _load_annotationsQ_R(annotations_jsonpath, split):
+    """Build an index out of FOIL annotations, mapping each image ID with its corresponding captions."""
+    entries = []
+    with open(annotations_jsonpath, 'rb') as f: # opening file in binary(rb) mode    
+        for annotation in json_lines.reader(f):
+            # metadata_fn = json.load(open(os.path.join('data/VCR/vcr1images', annotation["metadata_fn"]), 'r'))
+            # det_names = metadata_fn["names"]
+            det_names = ""
+            question = annotation["question"]
+            if split == 'test':
+                ans_label = 0
+            else:
+                ans_label = annotation["rationale_label"]
+            img_id = _converId(annotation["img_id"])
+            anno_id = int(annotation["annot_id"].split('-')[1])
+            entries.append(
+                {"question": question, 'answers':annotation["rationale_choices"], "metadata_fn": annotation["metadata_fn"], 'target':ans_label, 'img_id':img_id, 'anno_id':anno_id}
+            )
+
+    return entries
+
+def _load_annotationsQR_A(annotations_jsonpath, split):
+    """Build an index out of FOIL annotations, mapping each image ID with its corresponding captions."""
+    entries = []
+    with open(annotations_jsonpath, 'rb') as f: # opening file in binary(rb) mode    
+        for annotation in json_lines.reader(f):
+            # metadata_fn = json.load(open(os.path.join('data/VCR/vcr1images', annotation["metadata_fn"]), 'r'))
+            # det_names = metadata_fn["names"]
+            if split == 'test':
+                # for each answer
+                for answer in annotation["rationale_choices"]:
+                    question = annotation["question"] + ["[SEP]"] + answer   
+                    img_id = _converId(annotation["img_id"])
+                    ans_label = 0
+                    anno_id = int(annotation["annot_id"].split('-')[1])
+                    entries.append(
+                        {"question": question, 'answers':annotation["answer_choices"], "metadata_fn": annotation["metadata_fn"], 'target':ans_label, 'img_id':img_id}
+                    )
+            else:
+                det_names = ""
+                question = annotation["question"] + ["[SEP]"] + annotation["rationale_choices"][annotation['rationale_label']]    
+                ans_label = annotation["answer_label"]
+                # img_fn = annotation["img_fn"]
+                img_id = _converId(annotation["img_id"])
+                anno_id = int(annotation["annot_id"].split('-')[1])
+                entries.append(
+                    {"question": question, 'answers':annotation["answer_choices"], "metadata_fn": annotation["metadata_fn"], 'target':ans_label, 'img_id':img_id, 'anno_id':anno_id}
+                )
+    return entries
+
 class VCRDataset(Dataset):
     def __init__(
         self,
@@ -103,6 +153,10 @@ class VCRDataset(Dataset):
             self._entries = _load_annotationsQ_A(annotations_jsonpath, split)
         elif task == "VCR_QA-R":
             self._entries = _load_annotationsQA_R(annotations_jsonpath, split)
+        elif task == "VCR_Q-R":
+            self._entries = _load_annotationsQ_R(annotations_jsonpath, split)
+        elif task == "VCR_QR-A":
+            self._entries = _load_annotationsQR_A(annotations_jsonpath, split)
         else:
             assert False
         self._split = split
@@ -128,7 +182,8 @@ class VCRDataset(Dataset):
         # cache file path data/cache/train_ques
         cache_path = "data/VCR/cache/pretrained_original/" + split + '_' + task + "_" + str(max_seq_length) + "_" + str(max_region_num) + "_vcr.pkl"
         if not os.path.exists(cache_path):
-            os.makedirs(cache_path)
+            if not os.path.exists(os.path.dirname(cache_path)):
+                os.makedirs(os.path.dirname(cache_path))
             self.tokenize()
             self.tensorize()
             cPickle.dump(self._entries, open(cache_path, 'wb'))

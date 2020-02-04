@@ -24,6 +24,8 @@ DatasetMapTrain = {
 				   'TASK2': VCRDataset,				   
 				   'TASK3': RetreivalDataset,
 				   'TASK4': ReferExpressionDataset,
+                   'TASK5': VCRDataset,
+                   'TASK6': VCRDataset
 				   }		
 
 DatasetMapEval = {
@@ -32,4 +34,6 @@ DatasetMapEval = {
 				 'TASK2': VCRDataset,				   
 				 'TASK3': RetreivalDatasetVal,
 				 'TASK4': ReferExpressionDataset,			   
+                 'TASK5': VCRDataset,
+                 'TASK6': VCRDataset
 				}
