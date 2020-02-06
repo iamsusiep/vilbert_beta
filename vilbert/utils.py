@@ -42,7 +42,7 @@ def lr_warmup(step, ):
 
 class tbLogger(object):
     def __init__(self, log_dir, txt_dir, task_names, task_ids, task_num_iters, gradient_accumulation_steps, save_logger=True, txt_name='out.txt'):
-        log_dir = os.path.join(log_dir, 'pretrained_original')
+        log_dir = os.path.join(log_dir, 'VRA')
         logger.info("logging file at: " + log_dir)
 
         self.save_logger=save_logger
