@@ -165,7 +165,7 @@ def main():
     if default_gpu and not os.path.exists(savePath):
         os.makedirs(savePath)
 
-    task_batch_size, task_num_iters, task_ids, task_datasets_val, task_dataloader_val \
+    task_batch_size, task_num_iters, task_ids, task_datasets_val, task_dataloader_val,task_rationale_counts \
                         = LoadDatasetEval(args, task_cfg, args.tasks.split('-'))
 
     tbLogger = utils.tbLogger(timeStamp, savePath, task_names, task_ids, task_num_iters, 1, save_logger=False, txt_name='eval.txt')
@@ -205,9 +205,10 @@ def main():
         results = []
         others = []
         for i, batch in enumerate(task_dataloader_val[task_id]):
-            loss, score, batch_size, results, others = EvaluatingModel(args, task_cfg, device, \
+            count_correct_rationale,count_incorrect_rationale= task_rationale_counts[i] 
+            loss, score, batch_size, results, others, is_correct_rationale, pos_score, neg_score = EvaluatingModel(args, task_cfg, device, \
                     task_id, batch, model, task_dataloader_val, task_losses, results, others)
-
+            
             tbLogger.step_val(0, float(loss), float(score), task_id, batch_size, 'val')
 
             sys.stdout.write('%d/%d\r' % (i, len(task_dataloader_val[task_id])))
