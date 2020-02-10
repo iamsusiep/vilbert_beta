@@ -180,7 +180,7 @@ class VCRDataset(Dataset):
             os.makedirs(os.path.join(dataroot, "cache"))
 
         # cache file path data/cache/train_ques
-        cache_path = "data/VCR/cache/pretrained_original/" + split + '_' + task + "_" + str(max_seq_length) + "_" + str(max_region_num) + "_vcr.pkl"
+        cache_path = "data/VCR/cache/VRA/" + split + '_' + task + "_" + str(max_seq_length) + "_" + str(max_region_num) + "_vcr.pkl"
         if not os.path.exists(cache_path):
             if not os.path.exists(os.path.dirname(cache_path)):
                 os.makedirs(os.path.dirname(cache_path))
