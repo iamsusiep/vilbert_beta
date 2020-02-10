@@ -126,9 +126,8 @@ class VCRDataset(Dataset):
             os.makedirs(os.path.join(dataroot, "cache"))
 
         # cache file path data/cache/train_ques
-        cache_path = "data/VCR/cache/pretrained_original/" + split + '_' + task + "_" + str(max_seq_length) + "_" + str(max_region_num) + "_vcr.pkl"
+        cache_path = "data/VCR/cache/regular/" + split + '_' + task + "_" + str(max_seq_length) + "_" + str(max_region_num) + "_vcr.pkl"
         if not os.path.exists(cache_path):
-            os.makedirs(cache_path)
             self.tokenize()
             self.tensorize()
             cPickle.dump(self._entries, open(cache_path, 'wb'))

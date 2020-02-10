@@ -59,7 +59,7 @@ class tbLogger(object):
         self.task_step = {task_id:0 for task_id in task_ids}
         self.task_step_tmp = {task_id:0 for task_id in task_ids}
         self.task_num_iters = task_num_iters
-        self.epochId = 0
+        self.epochId = 8
         self.gradient_accumulation_steps = gradient_accumulation_steps
         self.task_loss_val = {task_id:0 for task_id in task_ids}
         self.task_score_val = {task_id:0 for task_id in task_ids}
@@ -81,7 +81,7 @@ class tbLogger(object):
         self.task_step[task_id] += self.gradient_accumulation_steps
         self.task_step_tmp[task_id] += self.gradient_accumulation_steps
         self.epochId = epochId
-
+        stepId += 23283
         # plot on tensorboard.
         self.linePlot(stepId, loss, split, self.task_id2name[task_id] + '_loss')
         self.linePlot(stepId, score, split, self.task_id2name[task_id] + '_score')
