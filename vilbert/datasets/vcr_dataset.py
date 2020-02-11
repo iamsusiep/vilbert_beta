@@ -104,16 +104,30 @@ def _load_annotationsQ_R(annotations_jsonpath, split):
             )
 
     return entries
+def load_rationale_predicted():
+    d = {}
+    with open('/home/suji/spring20/vilbert_beta/results/QR/VRA-/val_result.json') as f:
+        data = json.loads(f.read())
+    for x in data:
+        values =x['answer']
+        d[x['question_id']] = values.index(max(values))
+    return d
+
 
 def _load_annotationsQR_A(annotations_jsonpath, split):
     """Build an index out of FOIL annotations, mapping each image ID with its corresponding captions."""
     entries = []
+    count_correct_rationale = 0
+    count_incorrect_rationale = 0
+    d = load_rationale_predicted()
     with open(annotations_jsonpath, 'rb') as f: # opening file in binary(rb) mode    
         for annotation in json_lines.reader(f):
             # metadata_fn = json.load(open(os.path.join('data/VCR/vcr1images', annotation["metadata_fn"]), 'r'))
             # det_names = metadata_fn["names"]
             if split == 'test':
                 # for each answer
+                print("split test")
+                '''
                 for answer in annotation["rationale_choices"]:
                     question = annotation["question"] + ["[SEP]"] + answer   
                     img_id = _converId(annotation["img_id"])
@@ -122,16 +136,30 @@ def _load_annotationsQR_A(annotations_jsonpath, split):
                     entries.append(
                         {"question": question, 'answers':annotation["answer_choices"], "metadata_fn": annotation["metadata_fn"], 'target':ans_label, 'img_id':img_id}
                     )
+                '''
             else:
                 det_names = ""
-                question = annotation["question"] + ["[SEP]"] + annotation["rationale_choices"][annotation['rationale_label']]    
+                question_no = annotation["question_number"]
+                pred_r_ind = d[question_no]
+                pred_r = annotation["rationale_choices"][pred_r_ind]
+                print("split val")
+                det_names = ""
+                question = annotation["question"] + ["[SEP]"] + pred_r #annotation["rationale_choices"][annotation['rationale_label']]   
+                correct_rationale_label = (pred_r == annotation["rationale_choices"][annotation['rationale_label']])
+                if correct_rationale_label:
+                    count_correct_rationale += 1
+                else:
+                    count_incorrect_rationale += 1
                 ans_label = annotation["answer_label"]
                 # img_fn = annotation["img_fn"]
                 img_id = _converId(annotation["img_id"])
                 anno_id = int(annotation["annot_id"].split('-')[1])
                 entries.append(
-                    {"question": question, 'answers':annotation["answer_choices"], "metadata_fn": annotation["metadata_fn"], 'target':ans_label, 'img_id':img_id, 'anno_id':anno_id}
+                    {"question": question, 'answers':annotation["answer_choices"], "metadata_fn": annotation["metadata_fn"], 'target':ans_label, 'img_id':img_id, 'anno_id':anno_id,'is_correct_rationale': correct_rationale_label}
                 )
+    print("total count_correct_rationale:", count_correct_rationale)
+    print("total count_incorrect_rationale", count_incorrect_rationale)
+    print("total:", count_correct_rationale + count_incorrect_rationale)
     return entries
 
 class VCRDataset(Dataset):
@@ -150,12 +178,16 @@ class VCRDataset(Dataset):
     ):
         # All the keys in `self._entries` would be present in `self._image_features_reader`
         if task == 'VCR_Q-A':
+            print("one")
             self._entries = _load_annotationsQ_A(annotations_jsonpath, split)
         elif task == "VCR_QA-R":
+            print("two")
             self._entries = _load_annotationsQA_R(annotations_jsonpath, split)
         elif task == "VCR_Q-R":
+            print("three")
             self._entries = _load_annotationsQ_R(annotations_jsonpath, split)
         elif task == "VCR_QR-A":
+            print("four")
             self._entries = _load_annotationsQR_A(annotations_jsonpath, split)
         else:
             assert False
@@ -374,7 +406,7 @@ class VCRDataset(Dataset):
         input_mask = entry["input_mask"]
         segment_ids = entry["segment_ids"]
         target = int(entry["target"])
-
+        correct_rationale_label = entry["is_correct_rationale"]
         if self._split == 'test':
             # anno_id = entry["anno_id"]
             anno_id = 0#entry["anno_id"]
@@ -390,7 +422,7 @@ class VCRDataset(Dataset):
                 if idx != -1 and idx+num_box_preserve < self._max_region_num:
                     co_attention_mask[ii, idx+num_box_preserve, jj] = 1
 
-        return features, spatials, image_mask, input_ids, target, input_mask, segment_ids, co_attention_mask, anno_id
+        return features, spatials, image_mask, input_ids, target, input_mask, segment_ids, co_attention_mask, anno_id, correct_rationale_label
 
     def __len__(self):
         return len(self._entries)
