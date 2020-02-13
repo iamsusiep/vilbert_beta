@@ -105,6 +105,7 @@ def _load_annotationsQ_R(annotations_jsonpath, split):
 
     return entries
 def load_rationale_predicted():
+    # key is question_id value is rationale index
     d = {}
     with open('/home/suji/spring20/vilbert_beta/results/QR/VRA-/val_result.json') as f:
         data = json.loads(f.read())
