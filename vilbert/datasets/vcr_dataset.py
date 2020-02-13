@@ -88,7 +88,7 @@ def _load_annotationsQA_R(annotations_jsonpath, split):
                 pred_a = annotation["answer_choices"][pred_a_ind]
                 question = annotation["question"] + ["[SEP]"] + pred_a #annotation["answer_choices"][annotation['answer_label']]    
                 ans_label = annotation["rationale_label"]
-                correct_answer_label = (pred_a == annotation["answer_choices"][annotation['answer_label']])
+                correct_answer_label = (pred_a_ind == annotation['answer_label'])
                 # img_fn = annotation["img_fn"]
                 img_id = _converId(annotation["img_id"])
                 entries.append(
