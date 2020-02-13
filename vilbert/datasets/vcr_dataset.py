@@ -142,12 +142,12 @@ def _load_annotationsQR_A(annotations_jsonpath, split):
             else:
                 det_names = ""
                 question_no = annotation["question_number"]
-                pred_r_ind, rationale_gt = d[question_no]
+                anno_id = int(annotation["annot_id"].split('-')[1])
+                pred_r_ind, rationale_gt = d[anno_id]
                 pred_r = annotation["rationale_choices"][pred_r_ind]
                 print('rationale_gt',rationale_gt )
                 print('annot_label', annotation['rationale_label'])
                 assert rationale_gt == annotation['rationale_label']
-                print("split val")
                 det_names = ""
                 question = annotation["question"] + ["[SEP]"] + pred_r #annotation["rationale_choices"][annotation['rationale_label']]   
                 correct_rationale_label = (pred_r_ind == annotation["rationale_label"])
@@ -158,7 +158,6 @@ def _load_annotationsQR_A(annotations_jsonpath, split):
                 ans_label = annotation["answer_label"]
                 # img_fn = annotation["img_fn"]
                 img_id = _converId(annotation["img_id"])
-                anno_id = int(annotation["annot_id"].split('-')[1])
                 entries.append(
                     {"question": question, 'answers':annotation["answer_choices"], "metadata_fn": annotation["metadata_fn"], 'target':ans_label, 'img_id':img_id, 'anno_id':anno_id,'is_correct_rationale': correct_rationale_label}
                 )

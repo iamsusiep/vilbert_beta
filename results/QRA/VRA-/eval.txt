@@ -1,1 +1,1 @@
-Validation [VCR_QR-A]: loss 0.931 score 89.402 
+Validation [VCR_QR-A]: loss 0.842 score 90.416 
