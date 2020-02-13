@@ -111,7 +111,8 @@ def load_rationale_predicted():
         data = json.loads(f.read())
     for x in data:
         values =x['answer']
-        d[x['question_id']] = values.index(max(values))
+        rationale_gt = x['target']
+        d[x['question_id']] = (values.index(max(values)), rationale_gt)
     return d
 
 
@@ -141,12 +142,15 @@ def _load_annotationsQR_A(annotations_jsonpath, split):
             else:
                 det_names = ""
                 question_no = annotation["question_number"]
-                pred_r_ind = d[question_no]
+                pred_r_ind, rationale_gt = d[question_no]
                 pred_r = annotation["rationale_choices"][pred_r_ind]
+                print('rationale_gt',rationale_gt )
+                print('annot_label', annotation['rationale_label'])
+                assert rationale_gt == annotation['rationale_label']
                 print("split val")
                 det_names = ""
                 question = annotation["question"] + ["[SEP]"] + pred_r #annotation["rationale_choices"][annotation['rationale_label']]   
-                correct_rationale_label = (pred_r == annotation["rationale_choices"][annotation['rationale_label']])
+                correct_rationale_label = (pred_r_ind == annotation["rationale_label"])
                 if correct_rationale_label:
                     count_correct_rationale += 1
                 else:
@@ -213,7 +217,7 @@ class VCRDataset(Dataset):
             os.makedirs(os.path.join(dataroot, "cache"))
 
         # cache file path data/cache/train_ques
-        cache_path = "data/VCR/cache/VRA/" + split + '_' + task + "_" + str(max_seq_length) + "_" + str(max_region_num) + "_vcr.pkl"
+        cache_path = "data/VCR/cache/QRA_eval/" + split + '_' + task + "_" + str(max_seq_length) + "_" + str(max_region_num) + "_vcr.pkl"
         if not os.path.exists(cache_path):
             if not os.path.exists(os.path.dirname(cache_path)):
                 os.makedirs(os.path.dirname(cache_path))

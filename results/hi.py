@@ -16,7 +16,7 @@ correct_rationale_answer = 0
 
 incorrect_rationale= 0
 incorrect_rationale_answer= 0
-
+# 63% should be rationale correct
 
 for x in data:
     values = x['answer']
@@ -49,8 +49,8 @@ total = correct_answer + incorrect_answer
 print("Total", correct_answer + incorrect_answer)
 print("Correct  answer Predicted:", correct_answer)
 print("Incorrect answer Predicted",incorrect_answer)
-print("Correct Rationale Predicted:", correct_rationale_answer)
-print("Incorrect Rationale Predicted",incorrect_rationale_answer)
+print("Correct Rationale Predicted:", correct_rationale)
+print("Incorrect Rationale Predicted",incorrect_rationale)
 print("")
 
 print("Correct rationale predicted given correct answer", correct_answer_rationale)# same
