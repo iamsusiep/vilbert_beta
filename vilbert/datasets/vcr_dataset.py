@@ -51,8 +51,16 @@ def _load_annotationsQ_A(annotations_jsonpath, split):
             entries.append(
                 {"question": question, 'answers':annotation["answer_choices"], "metadata_fn": annotation["metadata_fn"], 'target':ans_label, 'img_id':img_id, 'anno_id':anno_id}
             )
-
     return entries
+
+def load_answer_predicted():
+    d = {}
+    with open('/home/suji/spring20/vilbert_beta/results/QA/val_result.json') as f:
+        data = json.loads(f.read())
+    for x in data:
+        values = x['answer']
+        d[x['question_id']] = values.index(max(values))
+    return d
 
 def _load_annotationsQA_R(annotations_jsonpath, split):
     """Build an index out of FOIL annotations, mapping each image ID with its corresponding captions."""
@@ -72,16 +80,21 @@ def _load_annotationsQA_R(annotations_jsonpath, split):
                         {"question": question, 'answers':annotation["rationale_choices"], "metadata_fn": annotation["metadata_fn"], 'target':ans_label, 'img_id':img_id}
                     )
             else:
-                det_names = ""
-                question = annotation["question"] + ["[SEP]"] + annotation["answer_choices"][annotation['answer_label']]    
+                det_names = ""  
+                d = load_answer_predicted()
+                question_no = annotation["question_number"]
+                pred_a_ind = d[question_no]
+                pred_a = annotation["answer_choices"][pred_a_ind]
+                question = annotation["question"] + ["[SEP]"] + pred_a #annotation["answer_choices"][annotation['answer_label']]    
                 ans_label = annotation["rationale_label"]
+                correct_answer_label = (pred_a == annotation["answer_choices"][annotation['answer_label']])
                 # img_fn = annotation["img_fn"]
                 img_id = _converId(annotation["img_id"])
                 anno_id = int(annotation["annot_id"].split('-')[1])
                 entries.append(
-                    {"question": question, 'answers':annotation["rationale_choices"], "metadata_fn": annotation["metadata_fn"], 'target':ans_label, 'img_id':img_id, 'anno_id':anno_id}
+                    {"question": question, 'answers':annotation["rationale_choices"], "metadata_fn": annotation["metadata_fn"], 'target':ans_label, 'img_id':img_id, 'anno_id':anno_id, 'is_correct_answer': correct_answer_label}
                 )
-
+    print("first entry", entries[0]['is_correct_answer'])
     return entries
 
 class VCRDataset(Dataset):
@@ -101,7 +114,7 @@ class VCRDataset(Dataset):
         # All the keys in `self._entries` would be present in `self._image_features_reader`
         if task == 'VCR_Q-A':
             self._entries = _load_annotationsQ_A(annotations_jsonpath, split)
-        elif task == "VCR_QA-R":
+        elif task == "VCR_QA-R":    
             self._entries = _load_annotationsQA_R(annotations_jsonpath, split)
         else:
             assert False
@@ -126,8 +139,9 @@ class VCRDataset(Dataset):
             os.makedirs(os.path.join(dataroot, "cache"))
 
         # cache file path data/cache/train_ques
-        cache_path = "data/VCR/cache/regular/" + split + '_' + task + "_" + str(max_seq_length) + "_" + str(max_region_num) + "_vcr.pkl"
+        cache_path = "data/VCR/cache/regular_eval/" + split + '_' + task + "_" + str(max_seq_length) + "_" + str(max_region_num) + "_vcr.pkl"
         if not os.path.exists(cache_path):
+            os.makedirs(os.path.dirname(cache_path))
             self.tokenize()
             self.tensorize()
             cPickle.dump(self._entries, open(cache_path, 'wb'))
@@ -268,7 +282,7 @@ class VCRDataset(Dataset):
     def __getitem__(self, index):
         
         entry = self._entries[index]
-
+        #print(entry)
         image_id = entry["img_id"]
         features, num_boxes, boxes, _ = self._image_features_reader[image_id]
 
@@ -318,7 +332,7 @@ class VCRDataset(Dataset):
         input_mask = entry["input_mask"]
         segment_ids = entry["segment_ids"]
         target = int(entry["target"])
-
+        is_correct_answer = entry["is_correct_answer"]
         if self._split == 'test':
             # anno_id = entry["anno_id"]
             anno_id = 0#entry["anno_id"]
@@ -334,7 +348,7 @@ class VCRDataset(Dataset):
                 if idx != -1 and idx+num_box_preserve < self._max_region_num:
                     co_attention_mask[ii, idx+num_box_preserve, jj] = 1
 
-        return features, spatials, image_mask, input_ids, target, input_mask, segment_ids, co_attention_mask, anno_id
+        return features, spatials, image_mask, input_ids, target, input_mask, segment_ids, co_attention_mask, anno_id, is_correct_answer
 
     def __len__(self):
         return len(self._entries)
