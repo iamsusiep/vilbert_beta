@@ -82,19 +82,18 @@ def _load_annotationsQA_R(annotations_jsonpath, split):
             else:
                 det_names = ""  
                 d = load_answer_predicted()
+                anno_id = int(annotation["annot_id"].split('-')[1])
                 question_no = annotation["question_number"]
-                pred_a_ind = d[question_no]
+                pred_a_ind = d[anno_id]
                 pred_a = annotation["answer_choices"][pred_a_ind]
                 question = annotation["question"] + ["[SEP]"] + pred_a #annotation["answer_choices"][annotation['answer_label']]    
                 ans_label = annotation["rationale_label"]
                 correct_answer_label = (pred_a == annotation["answer_choices"][annotation['answer_label']])
                 # img_fn = annotation["img_fn"]
                 img_id = _converId(annotation["img_id"])
-                anno_id = int(annotation["annot_id"].split('-')[1])
                 entries.append(
                     {"question": question, 'answers':annotation["rationale_choices"], "metadata_fn": annotation["metadata_fn"], 'target':ans_label, 'img_id':img_id, 'anno_id':anno_id, 'is_correct_answer': correct_answer_label}
                 )
-    print("first entry", entries[0]['is_correct_answer'])
     return entries
 
 class VCRDataset(Dataset):
