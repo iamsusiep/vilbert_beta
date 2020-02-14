@@ -1,4 +1,5 @@
 # OUTPUT FOR VRA
+```
 ('Total', 26534)
 ('Correct  answer Predicted:', 23991)
 ('Incorrect answer Predicted', 2543)
@@ -11,7 +12,7 @@
 ('Correct answer predicted given incorrect ratioanle', 8364)
 
 ('Both answer and rationale predicted correctly', 15627)
-
+```
 
 # ViLBERT <img src="fig/vilbert_trim.png" width="45">
 
