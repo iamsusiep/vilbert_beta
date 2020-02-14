@@ -1,3 +1,11 @@
+# Results for QAR
+
+```
+Answer: 0.7195673475540816
+Both correct: 0.5303761212029848
+reasoning correct: 0.6744931031883621
+Total 26534
+```
 # ViLBERT <img src="fig/vilbert_trim.png" width="45">
 
 #### ViLBERT_beta has been deprecated. Please see [vilbert-multi-task](https://github.com/facebookresearch/vilbert-multi-task), which includes implementations for [12-in-1: Multi-Task Vision and Language Representation Learning](https://arxiv.org/abs/1912.02315)
