@@ -1,3 +1,18 @@
+# OUTPUT FOR VRA
+('Total', 26534)
+('Correct  answer Predicted:', 23991)
+('Incorrect answer Predicted', 2543)
+('Correct Rationale Predicted:', 16860)
+('Incorrect Rationale Predicted', 9674)
+
+('Correct rationale predicted given correct answer', 15627)
+('Correct rationale predicted given incorrect answer', 1233)
+('Correct answer predicted given correct ratioanle', 15627)
+('Correct answer predicted given incorrect ratioanle', 8364)
+
+('Both answer and rationale predicted correctly', 15627)
+
+
 # ViLBERT <img src="fig/vilbert_trim.png" width="45">
 
 #### ViLBERT_beta has been deprecated. Please see [vilbert-multi-task](https://github.com/facebookresearch/vilbert-multi-task), which includes implementations for [12-in-1: Multi-Task Vision and Language Representation Learning](https://arxiv.org/abs/1912.02315)
